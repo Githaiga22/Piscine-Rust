@@ -1,63 +1,65 @@
 pub fn delete_and_backspace(s: &mut String) {
-    let mut chars: Vec<char> = s.chars().collect();
-    let mut i = chars.len() ;	
-	while i  > 0 {
-		i -= 1;
-        if chars[i] == '+' {
-			chars.remove(i); 
-            if i < chars.len() {
-                chars.remove(i);
-            }
-        }
-    }	
-    i = 0;
-    while i < chars.len() {
-        if chars[i] == '-' {
-            if i > 0 {
-                chars.remove(i - 1);
-                i -= 1;
-            }
-            chars.remove(i); 
-        }  else {
+    let mut res:String = String::new();
+    let  st: Vec<char> = s.chars().collect();
+    
+    let mut i = 0;
+    while  i < st.len(){
+        if st[i] == '-' && !st.is_empty(){
+            res.pop();
+            i += 1;
+        }else if st[i] == '+' {
+            let mut count = 0;
+           while i < st.len() && st[i] == '+'{
+            count += 1;
+            i += 1;
+           }
+
+            i = i + count;
+        }else {
+            res.push(st[i]);
             i += 1;
         }
     }
-	
-    *s = chars.into_iter().collect();
+    *s = res;
 }
 
+pub fn do_operations(v: &mut [String]) {
+    for n in v.iter_mut() {
+        let mut r = 0;
+        if n.contains("+") {
+            let parts:Vec<&str> = n.split("+").collect();
+            let n1 = parts[0].parse::<i32>().unwrap_or(0);
+            let n2 = parts[1].parse::<i32>().unwrap_or(0);
 
+            r = n1 + n2; 
+        }else if n.contains("-") {
+            let parts:Vec<&str> = n.split("-").collect();
+            let n1 = parts[0].parse::<i32>().unwrap_or(0);
+            let n2 = parts[1].parse::<i32>().unwrap_or(0);
 
+            r = n1 - n2;
+        };
+        *n = r.to_string();
+    }
+    
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
+    #[test]
+    fn it_works() {
+        let mut a = "bpp--o+er+++sskroi-++lcw".to_owned();
+        let mut b = [
+            "2+2".to_owned(),
+            "3+2".to_owned(),
+            "10-3".to_owned(),
+            "5+5".to_owned(),
+        ];
+        delete_and_backspace(&mut a);
+        do_operations(&mut b);
 
-
-pub fn do_operations(v: &mut Vec<String>) {
-    for element in v.iter_mut() {
-        let operator_index = element.chars().position(|c| c == '+' || c == '-');
-        if let Some(i) = operator_index {
-            let operator = element.chars().nth(i);
-            let (left, right) = element.split_at(i);
-            let x = left.trim().parse::<i32>().expect("invalid number");
-            let y = right.trim().parse::<i32>().expect("invalid number");
-            if let Some(o) = operator {
-                match o {
-                    '+' => {
-						*element = (x + y).to_string()
-					},
-                    '-' => {
-                        let y = -y;
-						*element = (x - y).to_string()
-					}
-					_ => println!("{} is not a valid operator!!",o)
-                }
-            }
-        }
+        assert_eq!(a, "borrow");
+        assert_eq!(b, ["4", "5", "7", "10"]);
     }
 }
-
-
-
-
-
-
-
