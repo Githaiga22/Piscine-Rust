@@ -8,20 +8,20 @@ pub fn expected_variable(compared: &str, expected: &str) -> Option<String> {
         &expected.to_lowercase()
     );
 
-    let expected_len = expected.len();
+    let expected_len = expected.len() as i32;
+    let distance = edit_distance(&compared.to_lowercase(), &expected.to_lowercase()) as i32;
+    
     if expected_len == 0 {
         return None;
     }
-
+    
     let similarity = 100 - ((distance * 100) / expected_len);
-
     if similarity >= 50 {
         Some(format!("{}%", similarity))
     } else {
         None
     }
-}
-
+    
 // Simple check for snake_case
 fn is_snake_case(s: &str) -> bool {
     !s.contains(char::is_uppercase) && s.chars().all(|c| c.is_ascii_lowercase() || c == '_' || c.is_ascii_digit())
