@@ -3,36 +3,35 @@ pub fn expected_variable(compared: &str, expected: &str) -> Option<String> {
         return None;
     }
 
-    let distance = edit_distance(
-        &compared.to_lowercase(),
-        &expected.to_lowercase()
-    );
-
     let expected_len = expected.len() as i32;
     let distance = edit_distance(&compared.to_lowercase(), &expected.to_lowercase()) as i32;
-    
+
     if expected_len == 0 {
         return None;
     }
-    
+
     let similarity = 100 - ((distance * 100) / expected_len);
+
     if similarity >= 50 {
         Some(format!("{}%", similarity))
     } else {
         None
     }
-    
-// Simple check for snake_case
+}
+
+// A string must have underscores and no uppercase letters to be snake_case
 fn is_snake_case(s: &str) -> bool {
-    !s.contains(char::is_uppercase) && s.chars().all(|c| c.is_ascii_lowercase() || c == '_' || c.is_ascii_digit())
+    s.contains('_') && !s.chars().any(|c| c.is_uppercase())
 }
 
-// Simple check for camelCase (lowerCamel)
+// A string must not have underscores, must start lowercase, and contain at least one uppercase
 fn is_camel_case(s: &str) -> bool {
-    !s.contains('_') && s.chars().next().map(|c| c.is_ascii_lowercase()).unwrap_or(false)
+    !s.contains('_')
+        && s.chars().next().map(|c| c.is_lowercase()).unwrap_or(false)
+        && s.chars().any(|c| c.is_uppercase())
 }
 
-// Edit distance function
+// Basic edit distance function
 fn edit_distance(a: &str, b: &str) -> usize {
     let mut costs = vec![0; b.len() + 1];
 
