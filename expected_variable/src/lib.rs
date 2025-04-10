@@ -1,14 +1,12 @@
-use case::{CaseExt, Case};
-use std::cmp;
-
 pub fn expected_variable(compared: &str, expected: &str) -> Option<String> {
-    // Check if the compared string is camelCase or snake_case
-    if !compared.is_camel_case() && !compared.is_snake_case() {
+    if !is_snake_case(compared) && !is_camel_case(compared) {
         return None;
     }
 
-    // Calculate edit distance (you must define or already have this function)
-    let distance = edit_distance(compared.to_lowercase().as_str(), expected.to_lowercase().as_str());
+    let distance = edit_distance(
+        &compared.to_lowercase(),
+        &expected.to_lowercase()
+    );
 
     let expected_len = expected.len();
     if expected_len == 0 {
@@ -24,7 +22,17 @@ pub fn expected_variable(compared: &str, expected: &str) -> Option<String> {
     }
 }
 
-// Damerau-Levenshtein distance (basic edit distance function)
+// Simple check for snake_case
+fn is_snake_case(s: &str) -> bool {
+    !s.contains(char::is_uppercase) && s.chars().all(|c| c.is_ascii_lowercase() || c == '_' || c.is_ascii_digit())
+}
+
+// Simple check for camelCase (lowerCamel)
+fn is_camel_case(s: &str) -> bool {
+    !s.contains('_') && s.chars().next().map(|c| c.is_ascii_lowercase()).unwrap_or(false)
+}
+
+// Edit distance function
 fn edit_distance(a: &str, b: &str) -> usize {
     let mut costs = vec![0; b.len() + 1];
 
@@ -40,7 +48,7 @@ fn edit_distance(a: &str, b: &str) -> usize {
             let new_cost = if ca == cb {
                 last_cost
             } else {
-                1 + cmp::min(cmp::min(costs[j], costs[j + 1]), last_cost)
+                1 + std::cmp::min(std::cmp::min(costs[j], costs[j + 1]), last_cost)
             };
             last_cost = costs[j + 1];
             costs[j + 1] = new_cost;
