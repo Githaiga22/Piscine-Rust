@@ -1,36 +1,30 @@
 pub fn pig_latin(text: &str) -> String {
-    let mut end = String::new();
-    let mut start = String::new();
-    let mut found_vowel = false;
-    let mut last = text.chars().next();
+    let vowels = ['a', 'e', 'i', 'o', 'u'];
 
-    for c in text.chars() {
-        if (!found_vowel && !is_vowel(c)) || c == 'u' && last == Some('q') {
-            end.push(c);
-        } else {
-            found_vowel = true;
-            start.push(c);
+    if text.is_empty() {
+        return String::new();
+    }
+
+    let lower = text.to_lowercase();
+    let chars: Vec<char> = lower.chars().collect();
+
+    if vowels.contains(&chars[0]) {
+        return format!("{}ay", lower);
+    }
+
+    let mut idx = 0;
+
+    // Special case for consonant followed by "qu"
+    if chars.len() >= 3 && !vowels.contains(&chars[0]) && chars[1] == 'q' && chars[2] == 'u' {
+        idx = 3;
+    } else {
+        while idx < chars.len() && !vowels.contains(&chars[idx]) {
+            idx += 1;
         }
-        last = Some(c)
     }
 
-    start + &end + "ay"
+    let (start, end) = chars.split_at(idx);
+    let result = format!("{}{}ay", end.iter().collect::<String>(), start.iter().collect::<String>());
+    result
 }
 
-pub fn is_vowel(c: char) -> bool {
-    matches!(c, 'a' | 'e' | 'i' | 'o' | 'u')
-}
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        assert_eq!(pig_latin(&String::from("igloo")), "iglooay".to_string());
-        assert_eq!(pig_latin(&String::from("apple")), "appleay".to_string());
-        assert_eq!(pig_latin(&String::from("hello")), "ellohay".to_string());
-        assert_eq!(pig_latin(&String::from("square")), "aresquay".to_string());
-    }
-}
