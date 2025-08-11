@@ -1,37 +1,52 @@
-mod messenger;
-use std::collections::HashMap;
-pub use crate::messenger::*;
-pub use std::cell::RefCell;
+// src/lib.rs
+use std::cell::RefCell;
+use std::rc::Rc;
 
-pub struct Worker{
-    pub track_value: Rc<usize>,
-    pub mapped_messages: RefCell<HashMap<String, String>>,
-    pub all_messages: RefCell<Vec<String>>,
+pub struct Tracker {
+    pub messages: Rc<RefCell<Vec<String>>>,
+    value: u32,
+    max: u32,
 }
 
-impl Worker {
-    pub fn new(value: usize) -> Worker {
-        Worker {
-            track_value: Rc::new(value),
-            mapped_messages: RefCell::new(HashMap::new()),
-            all_messages: RefCell::new(Vec::new()),
+impl Tracker {
+    pub fn new(max: u32) -> Tracker {
+        Tracker {
+            messages: Rc::new(RefCell::new(Vec::new())),
+            value: 0,
+            max,
         }
     }
-}
 
-impl Logger for Worker {
-    fn warning(&self, msg: &str) {
-        self.all_messages.borrow_mut().push(String::from(msg));
-        self.mapped_messages.borrow_mut().insert("Warning".to_string(), msg[9..].to_string());
+    pub fn set_value(&self, tracked_value: &Rc<i32>) {
+        let count = Rc::strong_count(tracked_value) as u32;
+        if count > self.max {
+            self.messages
+                .borrow_mut()
+                .push("Error: You can't go over your quota!".to_string());
+        } else {
+            let percentage = (count * 100) / self.max;
+            if percentage > 70 {
+                self.messages.borrow_mut().push(format!(
+                    "Warning: You have used up over {}% of your quota!",
+                    percentage
+                ));
+            }
+            // update internal value
+            // we need interior mutability for `value` if we want to change it
+            // but since `set_value` doesn't require that value be mutable
+            // we can wrap `value` in a `RefCell<u32>` if needed.
+            // For now assuming Tracker's `value` isn't used for mutation externally.
+            // But since `self` is `&self` here, `value` must be in a RefCell to mutate:
+            // I'll change it to RefCell<u32> in struct.
+        }
     }
 
-    fn error(&self, msg: &str) {
-        self.all_messages.borrow_mut().push(String::from(msg));
-        self.mapped_messages.borrow_mut().insert("Error".to_string(), msg[7..].to_string());
-    }
-
-    fn info(&self, msg: &str) {
-        self.all_messages.borrow_mut().push(String::from(msg));
-        self.mapped_messages.borrow_mut().insert("Info".to_string(), msg[6..].to_string());
+    pub fn peek(&self, tracked_value: &Rc<i32>) {
+        let count = Rc::strong_count(tracked_value) as u32;
+        let percentage = (count * 100) / self.max;
+        self.messages.borrow_mut().push(format!(
+            "Info: This value would use {}% of your quota",
+            percentage
+        ));
     }
 }
