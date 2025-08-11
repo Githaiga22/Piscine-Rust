@@ -1,41 +1,45 @@
-pub use std::rc::Rc;
+use std::cell::RefCell;
+use std::rc::Rc;
 
-pub trait Logger {
-    fn warning(&self, msg: &str);
-    fn info(&self, msg: &str);
-    fn error(&self, msg: &str);
+pub struct Tracker {
+    pub messages: Rc<RefCell<Vec<String>>>,
+    value: RefCell<u32>,
+    max: u32,
 }
 
-pub struct Tracker<'a, T: Logger>{
-    pub logger: &'a T,
-    pub value: Rc<usize>,
-    pub max: usize,
-}
-
-impl<'a, T> Tracker<'a, T>
-    where T: Logger {
-    pub fn new(logger: &'a T, max: usize) -> Tracker<'a, T>{
+impl Tracker {
+    pub fn new(max: u32) -> Tracker {
         Tracker {
-            logger,
-            value: Rc::new(0),
+            messages: Rc::new(RefCell::new(Vec::new())),
+            value: RefCell::new(0),
             max,
         }
     }
 
-    pub fn set_value(&'a self, value: &'a Rc<usize>) {
-        let percentage: f64 = Rc::strong_count(value) as f64 / self.max as f64;
-
-        if percentage >= 1.0{
-            self.logger.error("Error: you are over your quota!");
-        }else if percentage >= 0.7 && percentage < 1.0{
-            let message = format!("Warning: you have used up over {}% of your quota! Proceeds with precaution", (percentage * 100.0) as i64);
-            self.logger.warning(&message);
+    pub fn set_value(&self, tracked_value: &Rc<i32>) {
+        let count = Rc::strong_count(tracked_value) as u32;
+        if count > self.max {
+            self.messages
+                .borrow_mut()
+                .push("Error: You can't go over your quota!".to_string());
+        } else {
+            *self.value.borrow_mut() = count;
+            let percentage = (count * 100) / self.max;
+            if percentage > 70 {
+                self.messages.borrow_mut().push(format!(
+                    "Warning: You have used up over {}% of your quota!",
+                    percentage
+                ));
+            }
         }
     }
 
-    pub fn peek(&self, track_value: &'a Rc<usize>) {
-        let percentage: f64 = Rc::strong_count(track_value) as f64 / self.max as f64;
-        let message = format!("Info: you are using up to {}% of your quota", (percentage * 100.0) as i64);
-        self.logger.info(&message);
+    pub fn peek(&self, tracked_value: &Rc<i32>) {
+        let count = Rc::strong_count(tracked_value) as u32;
+        let percentage = (count * 100) / self.max;
+        self.messages.borrow_mut().push(format!(
+            "Info: This value would use {}% of your quota",
+            percentage
+        ));
     }
 }
